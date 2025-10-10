@@ -1,0 +1,14 @@
+server:
+  port: 8090
+  servlet:
+    context-path: /voucher
+spring:
+  datasource:
+    url: ${DBMS_CONNECTION:jdbc:mariadb://mariadb:3306/voucher_db}
+    driver-class-name: "org.mariadb.jdbc.Driver"
+    username: ${DBMS_USERNAME:root}
+    password: ${DBMS_PASSWORD:sapassword}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
