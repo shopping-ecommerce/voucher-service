@@ -55,13 +55,23 @@ public class VoucherController {
      * POST /api/vouchers/apply
      */
     @PostMapping("/apply")
-    public ApiResponse<Void> applyVoucher(
+    public ApiResponse<String> applyVoucher(
             @RequestBody ApplyVoucherRequest request) {
-        voucherService.applyVoucher(request);
 
-        return ApiResponse.<Void>builder()
+
+        return ApiResponse.<String>builder()
                 .code(200)
                 .message("Áp dụng voucher thành công")
+                .result(voucherService.applyVoucher(request))
+                .build();
+    }
+
+    @GetMapping("/complete/{paymentIntentId}")
+    public ApiResponse<String> completeVoucher(@PathVariable String paymentIntentId) {
+        voucherService.completePaymentIntent(paymentIntentId);
+        return ApiResponse.<String>builder()
+                .code(200)
+                .message("Hoàn tất sử dụng voucher thành công")
                 .build();
     }
 

@@ -29,7 +29,7 @@ public class VoucherServiceImpl implements VoucherService {
     private final VoucherRepository voucherRepository;
     private final UserVoucherRepository userVoucherRepository;
     private final VoucherUsageRepository voucherUsageRepository;
-
+    private final PaymentIntentRepository paymentIntentRepository;
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     /**
@@ -129,9 +129,11 @@ public class VoucherServiceImpl implements VoucherService {
 
     /**
      * Apply voucher khi order thành công - CHỈ DÙNG ĐƯỢC 1 LẦN
+     *
+     * @return
      */
     @Transactional
-    public void applyVoucher(ApplyVoucherRequest request) {
+    public String applyVoucher(ApplyVoucherRequest request) {
         log.info("Applying voucher {} for order {}", request.getVoucherId(), request.getOrderId());
 
         // 1. Tìm UserVoucher
@@ -164,11 +166,35 @@ public class VoucherServiceImpl implements VoucherService {
 
         voucherUsageRepository.save(usage);
 
+
+
         // 6. Tăng usedQuantity
         voucher.setUsedQuantity(voucher.getUsedQuantity() + 1);
         voucherRepository.save(voucher);
-
+        PaymentIntent intent = PaymentIntent.builder()
+                .userVoucherId(userVoucher.getId()) // Lưu lại ID để rollback
+                .voucherId(voucher.getId())
+                .status(PaymentIntentStatusEnum.PENDING)
+                .expiresAt(LocalDateTime.now().plusMinutes(15))
+                .build();
+        paymentIntentRepository.save(intent);
         log.info("Applied voucher {} for order {} successfully", request.getVoucherId(), request.getOrderId());
+        return intent.getId();
+    }
+
+    @Transactional
+    public void completePaymentIntent(String paymentIntentId) {
+        log.info("Completing PaymentIntent with ID {}", paymentIntentId);
+
+        // 1. Find the PaymentIntent by ID
+        PaymentIntent paymentIntent = paymentIntentRepository.findById(paymentIntentId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        // 2. Update the status to COMPLETED
+        paymentIntent.setStatus(PaymentIntentStatusEnum.COMPLETED);
+        paymentIntentRepository.save(paymentIntent);
+
+        log.info("PaymentIntent {} marked as COMPLETED", paymentIntentId);
     }
 
     /**

@@ -14,7 +14,8 @@ import java.util.List;
 public interface VoucherService {
     public void claimVoucher(String voucherCode, String userId);
     public VoucherValidationResponse validateVoucher(VoucherValidationRequest request);
-    public void applyVoucher(ApplyVoucherRequest request);
+    public String applyVoucher(ApplyVoucherRequest request);
+    public void completePaymentIntent(String paymentIntentId);
     public List<VoucherResponse> getAvailableVouchers(String userId, String sellerId);
     public List<UserVoucherResponse> getMyVouchers(String userId);
     public List<UserVoucherResponse> getMyVouchersBySeller(String userId, String sellerId);
