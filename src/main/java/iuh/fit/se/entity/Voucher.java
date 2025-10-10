@@ -104,7 +104,7 @@ public class Voucher {
                 && startDate != null && endDate != null
                 && now.isAfter(startDate)
                 && now.isBefore(endDate)
-                && (totalQuantity == null || (claimedQuantity != null && claimedQuantity < totalQuantity));
+                && (totalQuantity == null || (usedQuantity != null && usedQuantity < totalQuantity));
     }
 
     public boolean hasQuantityLeft() {
