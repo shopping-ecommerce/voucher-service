@@ -11,7 +11,6 @@ import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
-@RequestMapping("/voucher")
 @RequiredArgsConstructor
 public class VoucherController {
 
