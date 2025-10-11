@@ -74,53 +74,6 @@ public class VoucherController {
                 .message("Hoàn tất sử dụng voucher thành công")
                 .build();
     }
-
-    /**
-     * Rollback voucher khi order bị hủy
-     * POST /api/vouchers/rollback/{orderId}
-     */
-    @PostMapping("/rollback/{orderId}")
-    public ResponseEntity<ApiResponse<Void>> rollbackVoucher(@PathVariable String orderId) {
-//        voucherService.rollbackVoucher();
-
-        ApiResponse<Void> response = ApiResponse.<Void>builder()
-                .code(200)
-                .message("Hoàn trả voucher thành công")
-                .build();
-
-        return ResponseEntity.ok(response);
-    }
-
-    /**
-     * Lấy danh sách voucher available (chưa claim)
-     * GET /api/vouchers/available?userId=xxx&sellerId=yyy (sellerId optional)
-     */
-    @GetMapping("/available")
-    public ResponseEntity<ApiResponse<?>> getAvailableVouchers(
-            @RequestParam String userId,
-            @RequestParam(required = false) String sellerId) {
-        var data = voucherService.getAvailableVouchers(userId, sellerId);
-
-        ApiResponse<?> response = ApiResponse.builder()
-                .code(200)
-                .message("Lấy danh sách voucher thành công")
-                .result(data)
-                .build();
-
-        return ResponseEntity.ok(response);
-    }
-
-    @GetMapping("/getMyVoucherClaimedOfSeller")
-    ApiResponse<List<UserVoucherResponse>> getMyVoucherClaimedOfSeller(
-            @RequestParam String userId,
-            @RequestParam String sellerId) {
-        var data = voucherService.getMyVouchersBySeller(userId, sellerId);
-        return ApiResponse.<List<UserVoucherResponse>>builder()
-                .code(200)
-                .message("Lấy voucher đã claim của người dùng thành công")
-                .result(data)
-                .build();
-    }
     /**
      * Lấy danh sách voucher của user (đã claim)
      * GET /api/vouchers/my-vouchers?userId=xxx
@@ -133,25 +86,6 @@ public class VoucherController {
                 .code(200)
                 .message("Lấy danh sách voucher của bạn thành công")
                 .result(data)
-                .build();
-
-        return ResponseEntity.ok(response);
-    }
-
-    /**
-     * Lấy lịch sử sử dụng voucher
-     * GET /api/vouchers/usage-history?userId=xxx hoặc ?voucherId=yyy
-     */
-    @GetMapping("/usage-history")
-    public ResponseEntity<ApiResponse<?>> getUsageHistory(
-            @RequestParam(required = false) String userId,
-            @RequestParam(required = false) String voucherId) {
-//        var data = voucherService.getUsageHistory(userId, voucherId);
-
-        ApiResponse<?> response = ApiResponse.builder()
-                .code(200)
-                .message("Lấy lịch sử sử dụng voucher thành công")
-//                .data(data)
                 .build();
 
         return ResponseEntity.ok(response);
@@ -178,7 +112,7 @@ public class VoucherController {
      * Admin/Seller cập nhật voucher
      * PUT /api/vouchers/{id}
      */
-    @PutMapping("/{id}")
+    @PutMapping("/update/{id}")
     public ResponseEntity<ApiResponse<VoucherResponse>> updateVoucher(
             @PathVariable String id,
             @RequestBody VoucherUpdateRequest request) {
@@ -197,7 +131,7 @@ public class VoucherController {
      * Admin/Seller xóa voucher
      * DELETE /api/vouchers/{id}
      */
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/delete/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteVoucher(@PathVariable String id) {
         voucherService.deleteVoucher(id);
 
@@ -229,5 +163,16 @@ public class VoucherController {
 
         List<UserVoucherResponse> usableVouchers = voucherService.getUsableVouchersForCheckout(userId, sellerId, orderAmount);
         return ResponseEntity.ok(usableVouchers);
+    }
+
+    @GetMapping("/seller/all/{sellerId}")
+    public ApiResponse<List<VoucherResponse>> getAllVouchersBySeller(
+            @PathVariable String sellerId) {
+        List<VoucherResponse> data = voucherService.getAllVouchersBySeller(sellerId);
+        return ApiResponse.<List<VoucherResponse>>builder()
+                .code(200)
+                .message("Lấy danh sách voucher thành công")
+                .result(data)
+                .build();
     }
 }

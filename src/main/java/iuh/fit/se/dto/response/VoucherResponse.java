@@ -29,4 +29,5 @@ public class VoucherResponse {
     private String applicableTo;
     private List<String> applicableIds;
     private String status;
+    private LocalDateTime createdTime;
 }

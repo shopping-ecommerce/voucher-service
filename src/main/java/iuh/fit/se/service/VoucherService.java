@@ -16,12 +16,11 @@ public interface VoucherService {
     public VoucherValidationResponse validateVoucher(VoucherValidationRequest request);
     public String applyVoucher(ApplyVoucherRequest request);
     public void completePaymentIntent(String paymentIntentId);
-    public List<VoucherResponse> getAvailableVouchers(String userId, String sellerId);
     public List<UserVoucherResponse> getMyVouchers(String userId);
-    public List<UserVoucherResponse> getMyVouchersBySeller(String userId, String sellerId);
     public VoucherResponse createVoucher(VoucherCreateRequest request);
     public void deleteVoucher(String id);
     public List<SellerVoucherResponse> getSellerVouchersForUser(String sellerId, String userId);
     public List<UserVoucherResponse> getUsableVouchersForCheckout(String userId, String sellerId, BigDecimal orderAmount);
     public void rollbackVoucher(String voucherCode,String orderId);
+    public List<VoucherResponse> getAllVouchersBySeller(String sellerId);
 }

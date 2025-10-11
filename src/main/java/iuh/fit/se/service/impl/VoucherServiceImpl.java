@@ -235,25 +235,15 @@ public class VoucherServiceImpl implements VoucherService {
         log.info("Rolled back voucher with code {} successfully", voucherCode);
     }
 
-    /**
-     * Lấy danh sách voucher available (chưa claim)
-     */
-    @Transactional(readOnly = true)
-    public List<VoucherResponse> getAvailableVouchers(String userId, String sellerId) {
-        log.info("Getting available vouchers for user {}", userId);
+    @Override
+    public List<VoucherResponse> getAllVouchersBySeller(String sellerId) {
+        log.info("Fetching all vouchers for seller {}", sellerId);
 
-        LocalDateTime now = LocalDateTime.now();
-        List<Voucher> vouchers;
+        // Fetch all vouchers created by the seller
+        List<Voucher> vouchers = voucherRepository.findByCreatedByOrderByCreatedTimeDesc(sellerId);
 
-        if (sellerId != null && !sellerId.isEmpty()) {
-            vouchers = voucherRepository.findAvailableVouchersBySeller(now, sellerId);
-        } else {
-            vouchers = voucherRepository.findAvailableVouchers(now);
-        }
-
-        // Lọc ra những voucher user chưa claim
+        // Map the vouchers to VoucherResponse objects
         return vouchers.stream()
-                .filter(v -> !userVoucherRepository.existsByUserIdAndVoucherId(userId, v.getId()))
                 .map(this::toVoucherResponse)
                 .collect(Collectors.toList());
     }
@@ -273,43 +263,6 @@ public class VoucherServiceImpl implements VoucherService {
                 .collect(Collectors.toList());
     }
 
-    @Transactional(readOnly = true)
-    public List<UserVoucherResponse> getMyVouchersBySeller(String userId, String sellerId) {
-        log.info("Getting vouchers for user {} by seller {}", userId, sellerId);
-        LocalDateTime now = LocalDateTime.now();
-
-        // Lấy tất cả (hoặc chỉ CLAIMED nếu bạn muốn)
-        List<UserVoucher> userVouchers = userVoucherRepository.findByUserIdAndStatus(userId, UserVoucherStatusEnum.CLAIMED);
-
-
-        return userVouchers.stream()
-                .map(uv -> {
-                    Voucher v = voucherRepository.findById(uv.getVoucherId()).orElse(null);
-                    if (v == null) return null;
-
-                    // 1) Voucher phải còn hiệu lực (ACTIVE, trong khoảng thời gian)
-                    boolean validNow = v.getStatus() == VoucherStatusEnum.ACTIVE
-                            && now.isAfter(v.getStartDate()) && now.isBefore(v.getEndDate());
-
-                    // 2) Voucher phải "thuộc" seller này:
-                    //    - Hoặc do seller đó tạo (createdBy == sellerId)
-                    //    - Hoặc voucher áp dụng cho SPECIFIC_SELLERS và sellerId nằm trong applicableIds
-                    //    - Hoặc voucher ALL (nếu bạn muốn ALL cũng dùng được cho mọi seller)
-                    boolean belongToSeller =
-                            sellerId == null || sellerId.isBlank()
-                                    || v.getCreatedBy().equals(sellerId); // tuỳ business, có thể bỏ dòng này
-
-                    // 3) Nếu onlyUsable=true thì còn phải là voucher chưa dùng + còn hiệu lực
-                    boolean usable = uv.getStatus() == UserVoucherStatusEnum.CLAIMED && validNow;
-
-                    if (!belongToSeller) return null;
-                    if (!usable) return null;
-
-                    return toUserVoucherResponse(uv);
-                })
-                .filter(r -> r != null)
-                .collect(Collectors.toList());
-    }
 
     /**
      * Lấy danh sách voucher của seller với trạng thái của user
@@ -323,7 +276,7 @@ public class VoucherServiceImpl implements VoucherService {
         LocalDateTime now = LocalDateTime.now();
 
         // 1. Lấy voucher của seller CÒN HẠN và ACTIVE
-        List<Voucher> vouchers = voucherRepository.findByCreatedBy(sellerId).stream()
+        List<Voucher> vouchers = voucherRepository.findByCreatedByOrderByCreatedTimeDesc(sellerId).stream()
                 .filter(v -> v.getStatus() == VoucherStatusEnum.ACTIVE
                         && now.isAfter(v.getStartDate())
                         && now.isBefore(v.getEndDate()))
@@ -352,20 +305,6 @@ public class VoucherServiceImpl implements VoucherService {
                     return v2.getStartDate().compareTo(v1.getStartDate());
                 })
                 .collect(Collectors.toList());
-    }
-
-
-    /**
-     * Lấy lịch sử sử dụng voucher
-     */
-    @Transactional(readOnly = true)
-    public List<VoucherUsage> getUsageHistory(String userId, String voucherId) {
-        if (userId != null) {
-            return voucherUsageRepository.findByUserIdOrderByUsedTimeDesc(userId);
-        } else if (voucherId != null) {
-            return voucherUsageRepository.findByVoucherId(voucherId);
-        }
-        return List.of();
     }
 
     /**
@@ -526,6 +465,7 @@ public class VoucherServiceImpl implements VoucherService {
                 .applicableTo(voucher.getApplicableTo().name())
                 .applicableIds(voucher.getApplicableIds())
                 .status(voucher.getStatus().name())
+                .createdTime(voucher.getCreatedTime())
                 .build();
     }
 

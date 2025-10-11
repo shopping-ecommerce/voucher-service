@@ -46,8 +46,8 @@ public interface VoucherRepository extends JpaRepository<Voucher, String> {
     List<Voucher> findAvailableVouchersBySeller(@Param("now") LocalDateTime now,
                                                 @Param("sellerId") String sellerId);
 
-    List<Voucher> findByCreatedBy(String createdBy);
-
+    @Query("SELECT v FROM Voucher v WHERE v.createdBy = :createdBy ORDER BY v.createdTime DESC")
+    List<Voucher> findByCreatedByOrderByCreatedTimeDesc(@Param("createdBy") String createdBy);
     boolean existsByCode(String code);
 
 
