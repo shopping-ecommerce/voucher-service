@@ -28,4 +28,6 @@ public interface VoucherUsageRepository extends JpaRepository<VoucherUsage, Stri
     List<VoucherUsage> findByUserIdOrderByUsedTimeDesc(@Param("userId") String userId);
 
     boolean existsByOrderId(String orderId);
+    Optional<VoucherUsage> findByVoucherCodeAndOrderId(String voucherCode,String orderId);
+
 }

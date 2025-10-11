@@ -81,7 +81,7 @@ public class VoucherController {
      */
     @PostMapping("/rollback/{orderId}")
     public ResponseEntity<ApiResponse<Void>> rollbackVoucher(@PathVariable String orderId) {
-//        voucherService.rollbackVoucher(orderId);
+//        voucherService.rollbackVoucher();
 
         ApiResponse<Void> response = ApiResponse.<Void>builder()
                 .code(200)
@@ -161,7 +161,7 @@ public class VoucherController {
      * Admin/Seller tạo voucher
      * POST /api/vouchers
      */
-    @PostMapping
+    @PostMapping("/create")
     public ApiResponse<VoucherResponse> createVoucher(
             @RequestBody VoucherCreateRequest request) {
         VoucherResponse data = voucherService.createVoucher(request);

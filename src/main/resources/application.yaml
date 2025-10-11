@@ -3,6 +3,15 @@ server:
   servlet:
     context-path: /voucher
 spring:
+  kafka:
+    bootstrap-servers: ${DBKK_CONNECTION:kafka}:9094
+    consumer:
+      group-id: voucher-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
   datasource:
     url: ${DBMS_CONNECTION:jdbc:mariadb://mariadb:3306/voucher_db}
     driver-class-name: "org.mariadb.jdbc.Driver"
