@@ -23,5 +23,5 @@ public interface VoucherService {
     public void deleteVoucher(String id);
     public List<SellerVoucherResponse> getSellerVouchersForUser(String sellerId, String userId);
     public List<UserVoucherResponse> getUsableVouchersForCheckout(String userId, String sellerId, BigDecimal orderAmount);
-
+    public void rollbackVoucher(String voucherCode,String orderId);
 }

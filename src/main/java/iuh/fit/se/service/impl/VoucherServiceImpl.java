@@ -201,19 +201,19 @@ public class VoucherServiceImpl implements VoucherService {
      * Rollback voucher khi order bị hủy
      */
     @Transactional
-    public void rollbackVoucher(String orderId) {
-        log.info("Rolling back voucher for order {}", orderId);
+    public void rollbackVoucher(String voucherCode, String orderId) {
+        log.info("Rolling back voucher with code {}", voucherCode,orderId);
 
-        // 1. Tìm VoucherUsage
-        VoucherUsage usage = voucherUsageRepository.findByOrderId(orderId)
+        // 1. Find VoucherUsage by voucherCode
+        VoucherUsage usage = voucherUsageRepository.findByVoucherCodeAndOrderId(voucherCode,orderId)
                 .orElse(null);
 
         if (usage == null) {
-            log.info("No voucher usage found for order {}", orderId);
+            log.info("No voucher usage found for voucher code {}", voucherCode);
             return;
         }
 
-        // 2. Tìm UserVoucher và mark lại thành CLAIMED
+        // 2. Find UserVoucher and mark it as CLAIMED
         UserVoucher userVoucher = userVoucherRepository
                 .findByUserIdAndVoucherId(usage.getUserId(), usage.getVoucherId())
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
@@ -223,16 +223,16 @@ public class VoucherServiceImpl implements VoucherService {
         userVoucher.setOrderId(null);
         userVoucherRepository.save(userVoucher);
 
-        // 3. Giảm usedQuantity
+        // 3. Decrease usedQuantity
         Voucher voucher = voucherRepository.findById(usage.getVoucherId())
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
         voucher.setUsedQuantity(Math.max(0, voucher.getUsedQuantity() - 1));
         voucherRepository.save(voucher);
 
-        // 4. Xóa VoucherUsage record
+        // 4. Delete VoucherUsage record
         voucherUsageRepository.delete(usage);
 
-        log.info("Rolled back voucher for order {} successfully", orderId);
+        log.info("Rolled back voucher with code {} successfully", voucherCode);
     }
 
     /**
