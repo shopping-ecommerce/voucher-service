@@ -86,7 +86,7 @@ public class VoucherServiceImpl implements VoucherService {
         // 1. Kiểm tra user có voucher này không
         UserVoucher userVoucher = userVoucherRepository
                 .findByUserIdAndVoucherCode(request.getUserId(), request.getVoucherCode())
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+                .orElseThrow(() -> new AppException(ErrorCode.VOUCHER_NOT_FOUND));
 
         // 2. Kiểm tra voucher có thể dùng không
         if (!userVoucher.canBeUsed()) {
@@ -95,16 +95,16 @@ public class VoucherServiceImpl implements VoucherService {
                 case EXPIRED -> "Voucher đã hết hạn";
                 default -> "Voucher không thể sử dụng";
             };
-            throw new AppException(ErrorCode.USER_NOT_FOUND);
+            throw new AppException(ErrorCode.VOUCHER_EXPIRED);
         }
 
         // 3. Lấy thông tin voucher
         Voucher voucher = voucherRepository.findById(userVoucher.getVoucherId())
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+                .orElseThrow(() -> new AppException(ErrorCode.VOUCHER_NOT_FOUND));
 
         // 4. Kiểm tra voucher còn hiệu lực
         if (!voucher.isValid()) {
-            throw new AppException(ErrorCode.USER_NOT_FOUND);
+            throw new AppException(ErrorCode.VOUCHER_EXPIRED);
         }
 
         // 5. Validate điều kiện áp dụng
@@ -139,11 +139,11 @@ public class VoucherServiceImpl implements VoucherService {
         // 1. Tìm UserVoucher
         UserVoucher userVoucher = userVoucherRepository
                 .findByUserIdAndVoucherId(request.getUserId(), request.getVoucherId())
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+                .orElseThrow(() -> new AppException(ErrorCode.VOUCHER_NOT_ACTIVE));
 
         // 2. Kiểm tra voucher có thể dùng không
         if (!userVoucher.canBeUsed()) {
-            throw new AppException(ErrorCode.USER_NOT_FOUND);
+            throw new AppException(ErrorCode.VOUCHER_EXPIRED);
         }
 
         // 3. Mark voucher as USED - ĐÂY LÀ ĐIỂM QUAN TRỌNG
@@ -152,7 +152,7 @@ public class VoucherServiceImpl implements VoucherService {
 
         // 4. Lấy thông tin voucher
         Voucher voucher = voucherRepository.findById(request.getVoucherId())
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+                .orElseThrow(() -> new AppException(ErrorCode.VOUCHER_NOT_FOUND));
 
         // 5. Tạo VoucherUsage record
         VoucherUsage usage = VoucherUsage.builder()
@@ -188,7 +188,7 @@ public class VoucherServiceImpl implements VoucherService {
 
         // 1. Find the PaymentIntent by ID
         PaymentIntent paymentIntent = paymentIntentRepository.findById(paymentIntentId)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+                .orElseThrow(() -> new AppException(ErrorCode.VOUCHER_EXPIRED));
 
         // 2. Update the status to COMPLETED
         paymentIntent.setStatus(PaymentIntentStatusEnum.COMPLETED);
@@ -216,7 +216,7 @@ public class VoucherServiceImpl implements VoucherService {
         // 2. Find UserVoucher and mark it as CLAIMED
         UserVoucher userVoucher = userVoucherRepository
                 .findByUserIdAndVoucherId(usage.getUserId(), usage.getVoucherId())
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+                .orElseThrow(() -> new AppException(ErrorCode.VOUCHER_EXPIRED));
 
         userVoucher.setStatus(UserVoucherStatusEnum.CLAIMED);
         userVoucher.setUsedTime(null);
@@ -225,7 +225,7 @@ public class VoucherServiceImpl implements VoucherService {
 
         // 3. Decrease usedQuantity
         Voucher voucher = voucherRepository.findById(usage.getVoucherId())
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+                .orElseThrow(() -> new AppException(ErrorCode.VOUCHER_NOT_FOUND));
         voucher.setUsedQuantity(Math.max(0, voucher.getUsedQuantity() - 1));
         voucherRepository.save(voucher);
 
@@ -278,7 +278,7 @@ public class VoucherServiceImpl implements VoucherService {
         // 1. Lấy voucher của seller CÒN HẠN và ACTIVE
         List<Voucher> vouchers = voucherRepository.findByCreatedByOrderByCreatedTimeDesc(sellerId).stream()
                 .filter(v -> v.getStatus() == VoucherStatusEnum.ACTIVE
-                        && now.isAfter(v.getStartDate())
+                        && !now.isBefore(v.getStartDate()) // Include startDate equal to now
                         && now.isBefore(v.getEndDate()))
                 .collect(Collectors.toList());
 
@@ -316,7 +316,7 @@ public class VoucherServiceImpl implements VoucherService {
 
         // Kiểm tra code đã tồn tại chưa
         if (voucherRepository.existsByCode(request.getCode())) {
-            throw new AppException(ErrorCode.USER_NOT_FOUND);
+            throw new AppException(ErrorCode.VOUCHER_EXISTS);
         }
 
         Voucher voucher = Voucher.builder()
@@ -349,7 +349,7 @@ public class VoucherServiceImpl implements VoucherService {
         log.info("Updating voucher {}", id);
 
         Voucher voucher = voucherRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+                .orElseThrow(() -> new AppException(ErrorCode.VOUCHER_NOT_FOUND));
 
         if (request.getName() != null) {
             voucher.setName(request.getName());
@@ -381,7 +381,7 @@ public class VoucherServiceImpl implements VoucherService {
         log.info("Deleting voucher {}", id);
 
         Voucher voucher = voucherRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+                .orElseThrow(() -> new AppException(ErrorCode.VOUCHER_NOT_FOUND));
 
         voucher.setStatus(VoucherStatusEnum.INACTIVE);
         voucherRepository.save(voucher);
@@ -396,7 +396,7 @@ public class VoucherServiceImpl implements VoucherService {
         // 1. Kiểm tra giá trị đơn hàng tối thiểu
         if (voucher.getMinOrderAmount() != null
                 && request.getOrderAmount().compareTo(voucher.getMinOrderAmount()) < 0) {
-            throw new AppException(ErrorCode.USER_NOT_FOUND);}
+            throw new AppException(ErrorCode.VOUCHER_MIN_ORDER_AMOUNT_NOT_MET);}
     }
 
 
@@ -627,7 +627,8 @@ public class VoucherServiceImpl implements VoucherService {
         return claimedVouchers.stream()
                 .map(userVoucher -> {
                     // Lấy thông tin chi tiết của voucher gốc
-                    Voucher voucher = voucherRepository.findById(userVoucher.getVoucherId()).orElse(null);
+                    Voucher voucher = voucherRepository.findById(userVoucher.getVoucherId())
+                            .orElseThrow(() -> new AppException(ErrorCode.VOUCHER_NOT_FOUND));
                     if (voucher == null || !voucher.getCreatedBy().equals(sellerId)) {
                         return null; // Bỏ qua nếu voucher không tồn tại hoặc không phải của seller này
                     }
