@@ -102,7 +102,7 @@ public class Voucher {
         LocalDateTime now = LocalDateTime.now();
         return status != null && status == VoucherStatusEnum.ACTIVE
                 && startDate != null && endDate != null
-                && now.isAfter(startDate)
+                && !now.isBefore(startDate)
                 && now.isBefore(endDate)
                 && (totalQuantity == null || (usedQuantity != null && usedQuantity < totalQuantity));
     }
