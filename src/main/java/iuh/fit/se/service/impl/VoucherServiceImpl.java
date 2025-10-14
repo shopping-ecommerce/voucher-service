@@ -274,7 +274,7 @@ public class VoucherServiceImpl implements VoucherService {
         log.info("Getting seller {} vouchers for user {}", sellerId, userId);
 
         LocalDateTime now = LocalDateTime.now();
-
+        log.info("Current time: {}", now);
         // 1. Lấy voucher của seller CÒN HẠN và ACTIVE
         List<Voucher> vouchers = voucherRepository.findByCreatedByOrderByCreatedTimeDesc(sellerId).stream()
                 .filter(v -> v.getStatus() == VoucherStatusEnum.ACTIVE

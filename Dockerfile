@@ -10,12 +10,15 @@ COPY src ./src
 # Build source code with maven
 RUN mvn spotless:apply && mvn package -DskipTests
 
-
-#Stage 2: create image
+# Stage 2: create image
 # Start with Amazon Correto JDK 21
 FROM amazoncorretto:21.0.4
 
-# Set working folder to App and copy complied file from above step
+# Set timezone to Asia/Ho_Chi_Minh (Việt Nam) để tránh lệch múi giờ
+ENV TZ=Asia/Ho_Chi_Minh
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+# Set working folder to App and copy compiled file from above step
 WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
 
