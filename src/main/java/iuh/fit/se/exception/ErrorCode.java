@@ -81,7 +81,13 @@ public enum ErrorCode {
     ORDER_NOT_FOUND(1048, "Order not found", HttpStatus.NOT_FOUND),
     ORDER_CANNOT_BE_CANCELLED(1049, "Order cannot be cancelled at this stage", HttpStatus.BAD_REQUEST),
     INVALID_ORDER_STATUS_TRANSITION(1050, "Invalid order status transition", HttpStatus.BAD_REQUEST),
-    WALLET_NOT_FOUND(1051, "Wallet not found", HttpStatus.NOT_FOUND),;
+    WALLET_NOT_FOUND(1051, "Wallet not found", HttpStatus.NOT_FOUND),
+    VOUCHER_NOT_FOUND(1052, "Voucher not found", HttpStatus.NOT_FOUND),
+    VOUCHER_EXPIRED(1053, "Voucher has expired", HttpStatus.BAD_REQUEST),
+    VOUCHER_NOT_ACTIVE(1054, "Voucher is not active", HttpStatus.BAD_REQUEST),
+    VOUCHER_USAGE_LIMIT_REACHED(1055, "Voucher usage limit has been reached", HttpStatus.BAD_REQUEST),
+    VOUCHER_EXISTS(1056, "Voucher code already exists", HttpStatus.BAD_REQUEST),
+    VOUCHER_MIN_ORDER_AMOUNT_NOT_MET(1057, "Order amount does not meet the minimum requirement for this voucher", HttpStatus.BAD_REQUEST),;
 
     int code;
     String message;
